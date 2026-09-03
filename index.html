@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioZabb Flashcards - ซ้อมตอบคำถาม Pitching</title>
+  <meta name="description" content="ระบบ Flashcard ซ้อมตอบคำถามโปรเจกต์ BioZabb ผงปรุงรสธรรมชาติ 100% จากผักเหลือทิ้ง">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="brand-badge">
+        🌱 100% Upcycled Veggies Seasoning
+      </div>
+      <h1 class="brand-title">
+        BioZabb <span class="tag">Flashcards</span>
+      </h1>
+      <p class="brand-desc">
+        ระบบซ้อมตอบคำถาม Pitching & กรรมการ | คลิกที่คำถามเพื่อดูคำตอบ
+      </p>
+
+      <!-- View Switcher -->
+      <div class="view-mode-tabs">
+        <button id="mode-flashcard-btn" class="mode-tab-btn active">
+          🃏 Flashcard (ทีละใบ)
+        </button>
+        <button id="mode-list-btn" class="mode-tab-btn">
+          📋 ดูทั้งหมด (List View)
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls & Filter Panel -->
+    <section class="controls-card">
+      <div class="filter-row">
+        <!-- Category Filters -->
+        <div class="category-filters">
+          <button class="filter-btn active" data-filter="all">
+            🌟 ทั้งหมด <span class="count-badge" id="total-count-badge">21</span>
+          </button>
+          <button class="filter-btn" data-filter="general">
+            🌿 คำถามทั่วไป <span class="count-badge" id="general-count-badge">9</span>
+          </button>
+          <button class="filter-btn" data-filter="indepth">
+            🔬 คำถามเจาะลึก <span class="count-badge" id="indepth-count-badge">12</span>
+          </button>
+          <button class="filter-btn" data-filter="starred">
+            ⭐ ต้องทบทวน <span class="count-badge" id="star-count-badge">0</span>
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box-wrapper">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 ค้นหาคำถาม หรือคำตอบ..." autocomplete="off">
+          <button id="search-clear-btn" class="search-clear-btn" title="ล้างการค้นหา">✕</button>
+        </div>
+      </div>
+
+      <!-- Secondary Controls (Shuffle, TTS speed) -->
+      <div class="secondary-actions">
+        <div class="action-buttons-group">
+          <button id="shuffle-btn" class="btn-small" title="สุ่มลำดับคำถาม (S)">
+            🔀 สุ่มคำถาม
+          </button>
+          <button id="reset-btn" class="btn-small" title="เรียงตามลำดับเดิม">
+            🔄 เรียงตามเดิม
+          </button>
+        </div>
+
+        <div class="tts-speed-selector">
+          <span>🔊 ความเร็วเสียงอ่าน:</span>
+          <button class="tts-speed-btn" data-speed="0.8">0.8x</button>
+          <button class="tts-speed-btn active" data-speed="1.0">1.0x</button>
+          <button class="tts-speed-btn" data-speed="1.2">1.2x</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main>
+      <!-- Flashcard Interactive Arena -->
+      <div id="flashcard-arena" class="flashcard-arena">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-info">
+            <span id="progress-text">ข้อที่ 1 จาก 20 (5%)</span>
+            <span>💡 คลิกที่การ์ดเพื่อดูคำตอบ</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- 3D Perspective Flip Card -->
+        <div id="card-perspective" class="flashcard-perspective" title="คลิกเพื่อพลิกการ์ด">
+          <div id="main-flashcard" class="flashcard">
+            <!-- Front Face: Question -->
+            <div class="card-face card-front">
+              <div class="card-top-bar">
+                <span id="front-badge" class="badge-tag general">🌿 คำถามทั่วไป</span>
+                <div class="card-actions-right">
+                  <span id="front-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/20)</span>
+                  <button id="front-star-btn" class="btn-icon star-btn" title="ติดดาวเพื่อทบทวน (B)">★</button>
+                </div>
+              </div>
+
+              <div class="card-content">
+                <div id="card-question-text" class="card-question">
+                  กำลังโหลดคำถาม...
+                </div>
+              </div>
+
+              <div class="card-bottom-bar">
+                <span>👆 แตะที่การ์ด หรือกด <kbd>Spacebar</kbd> เพื่อพลิกดูคำตอบ</span>
+              </div>
+            </div>
+
+            <!-- Back Face: Answer -->
+            <div class="card-face card-back">
+              <div class="card-top-bar">
+                <span class="badge-tag answer-badge">💡 คำตอบ (Answer)</span>
+                <div class="card-actions-right">
+                  <button id="tts-btn" class="btn-icon tts-btn" title="ฟังเสียงอ่านภาษาอังกฤษ (P)">
+                    🔊 ฟังเสียงอ่าน
+                  </button>
+                  <span id="back-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/20)</span>
+                  <button id="back-star-btn" class="btn-icon star-btn" title="ติดดาวเพื่อทบทวน (B)">★</button>
+                </div>
+              </div>
+
+              <div class="card-content">
+                <div id="card-answer-text" class="card-answer-text">
+                  กำลังโหลดคำตอบ...
+                </div>
+                <div id="keyword-tags" class="keyword-tags"></div>
+              </div>
+
+              <div class="card-bottom-bar">
+                <span>👆 แตะที่การ์ดเพื่อกลับไปที่คำถาม</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="nav-controls">
+          <button id="prev-btn" class="btn-nav" title="ข้อก่อนหน้า (← หรือ A)">
+            ⬅️ ก่อนหน้า
+          </button>
+          <button id="flip-btn" class="btn-nav btn-flip-main" title="พลิกการ์ด (Spacebar)">
+            🔄 พลิกการ์ด
+          </button>
+          <button id="next-btn" class="btn-nav" title="ข้อถัดไป (→ หรือ D)">
+            ถัดไป ➡️
+          </button>
+        </div>
+      </div>
+
+      <!-- List / Grid View (2-Column Layout as requested) -->
+      <div id="list-view-container" class="list-view-container" style="display: none;">
+        <div class="list-toolbar">
+          <div class="list-toolbar-info">
+            <span id="list-count-info" style="font-weight: 600; color: #86efac;">แสดงทั้งหมด 21 ข้อ</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">💡 คลิกที่คำถามเพื่อดูคำตอบ</span>
+          </div>
+          <div class="list-toolbar-actions">
+            <button id="expand-all-btn" class="btn-small" title="ขยายดูคำตอบทั้งหมด">
+              📖 ขยายทั้งหมด
+            </button>
+            <button id="collapse-all-btn" class="btn-small" title="ยุบเก็บคำตอบทั้งหมด">
+              📁 ยุบทั้งหมด
+            </button>
+          </div>
+        </div>
+        <div id="list-columns-wrapper" class="list-two-columns"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-icon">🔍</div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 0.4rem;">ไม่พบคำถามที่ค้นหา</h3>
+        <p>ลองพิมพ์คำค้นหาอื่น หรือคลิกเลือกหมวดหมู่ "ทั้งหมด"</p>
+      </div>
+    </main>
+
+    <!-- Keyboard Shortcuts Helper -->
+    <footer class="keyboard-shortcuts-bar">
+      <span><kbd>Space</kbd> พลิกการ์ด</span>
+      <span><kbd>←</kbd> / <kbd>→</kbd> ก่อนหน้า / ถัดไป</span>
+      <span><kbd>S</kbd> สุ่มคำถาม</span>
+      <span><kbd>B</kbd> ติดดาวทบทวน</span>
+      <span><kbd>P</kbd> ฟังเสียงอ่าน</span>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="cards-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
