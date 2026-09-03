@@ -1,4 +1,4 @@
-// BioZabb Flashcards Application Logic
+﻿// BioZabb Flashcards Application Logic
 document.addEventListener('DOMContentLoaded', () => {
   // LocalStorage for Custom User Cards
   let userCards = [];
@@ -6,11 +6,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedCards = localStorage.getItem('biozabb_user_cards');
     if (savedCards) userCards = JSON.parse(savedCards);
   } catch (e) {
-    console.warn('LocalStorage not accessible for user cards', e);
+    console.warn('LocalStorage error (user cards):', e);
+  }
+
+  // LocalStorage for Deleted Card IDs (Can delete ANY card)
+  let deletedIds = new Set();
+  try {
+    const savedDel = localStorage.getItem('biozabb_deleted_card_ids');
+    if (savedDel) deletedIds = new Set(JSON.parse(savedDel));
+  } catch (e) {
+    console.warn('LocalStorage error (deleted cards):', e);
+  }
+
+  // LocalStorage for Starred / Bookmarked cards
+  let starredIds = new Set();
+  try {
+    const savedStars = localStorage.getItem('biozabb_starred_cards');
+    if (savedStars) starredIds = new Set(JSON.parse(savedStars));
+  } catch (e) {
+    console.warn('LocalStorage error (starred cards):', e);
+  }
+
+  // Function to get active list of cards (excluding deleted cards)
+  function getCombinedCards() {
+    return [...FLASHCARDS_DATA, ...userCards].filter(c => !deletedIds.has(c.id));
   }
 
   // State
-  let allCards = [...FLASHCARDS_DATA, ...userCards];
+  let allCards = getCombinedCards();
   let currentCards = [...allCards];
   let currentIndex = 0;
   let isFlipped = false;
@@ -19,17 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let viewMode = 'flashcard'; // 'flashcard' or 'list'
   let ttsRate = 1.0;
   let isSpeaking = false;
-
-  // LocalStorage for Starred / Bookmarked cards
-  let starredIds = new Set();
-  try {
-    const saved = localStorage.getItem('biozabb_starred_cards');
-    if (saved) {
-      starredIds = new Set(JSON.parse(saved));
-    }
-  } catch (e) {
-    console.warn('LocalStorage not accessible', e);
-  }
 
   // DOM Elements - Flashcard View
   const flashcardEl = document.getElementById('main-flashcard');
@@ -41,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const backNumEl = document.getElementById('back-card-number');
   const frontStarBtn = document.getElementById('front-star-btn');
   const backStarBtn = document.getElementById('back-star-btn');
+  const frontDelBtn = document.getElementById('front-del-btn');
+  const backDelBtn = document.getElementById('back-del-btn');
   const ttsBtn = document.getElementById('tts-btn');
   const keywordTagsEl = document.getElementById('keyword-tags');
 
@@ -50,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const flipBtn = document.getElementById('flip-btn');
   const shuffleBtn = document.getElementById('shuffle-btn');
   const resetBtn = document.getElementById('reset-btn');
+  const restoreBtn = document.getElementById('restore-btn');
+  const deletedCountBadge = document.getElementById('deleted-count');
   const progressText = document.getElementById('progress-text');
   const progressBarFill = document.getElementById('progress-bar-fill');
   const searchInput = document.getElementById('search-input');
@@ -65,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const listColumnsWrapper = document.getElementById('list-columns-wrapper');
   const listCountInfo = document.getElementById('list-count-info');
   const expandAllBtn = document.getElementById('expand-all-btn');
+  const collapseAllBtn = document.getElementById('collapse-all-btn');
   const emptyState = document.getElementById('empty-state');
 
   // Add Question Modal Elements
@@ -107,6 +124,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Toast Notification helper
+  let toastTimer = null;
+  function showToast(msg) {
+    if (!toastMsg) return;
+    toastMsg.textContent = msg;
+    toastMsg.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastMsg.classList.remove('show');
+    }, 2800);
+  }
+
+  // Modal Open & Close
+  function openAddModal() {
+    const modal = document.getElementById('add-card-modal');
+    if (!modal) return;
+    const form = document.getElementById('add-card-form');
+    if (form) form.reset();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      const qInput = document.getElementById('input-question');
+      if (qInput) qInput.focus();
+    }, 80);
+  }
+  window.openAddModal = openAddModal;
+
+  function closeAddModal() {
+    const modal = document.getElementById('add-card-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  window.closeAddModal = closeAddModal;
+
   // Highlight key terms in answers
   function formatAnswerWithHighlights(text, keywords) {
     if (!keywords || keywords.length === 0) return escapeHtml(text);
@@ -122,7 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function escapeHtml(str) {
-    return str
+    if (!str) return '';
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -136,6 +189,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (generalCountBadge) generalCountBadge.textContent = allCards.filter(c => c.category === 'general').length;
     if (indepthCountBadge) indepthCountBadge.textContent = allCards.filter(c => c.category === 'indepth').length;
     if (starCountBadge) starCountBadge.textContent = starredIds.size;
+
+    // Restore Button Visibility
+    if (restoreBtn) {
+      if (deletedIds.size > 0) {
+        restoreBtn.style.display = 'inline-flex';
+        if (deletedCountBadge) deletedCountBadge.textContent = deletedIds.size;
+      } else {
+        restoreBtn.style.display = 'none';
+      }
+    }
   }
 
   function saveStarred() {
@@ -144,6 +207,59 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
     updateBadgeCounts();
   }
+
+  // Delete ANY card
+  function deleteCard(id) {
+    const target = allCards.find(c => c.id === id);
+    const qText = target ? target.question : `ข้อ #${id}`;
+    if (!confirm(`ต้องการลบคำถาม:\n"${qText}"\nใช่หรือไม่?`)) {
+      return;
+    }
+
+    deletedIds.add(id);
+    try {
+      localStorage.setItem('biozabb_deleted_card_ids', JSON.stringify([...deletedIds]));
+    } catch (e) {}
+
+    // If custom, also remove from userCards
+    userCards = userCards.filter(c => c.id !== id);
+    try {
+      localStorage.setItem('biozabb_user_cards', JSON.stringify(userCards));
+    } catch (e) {}
+
+    starredIds.delete(id);
+    saveStarred();
+
+    allCards = getCombinedCards();
+    updateBadgeCounts();
+
+    if (currentIndex >= allCards.length) {
+      currentIndex = Math.max(0, allCards.length - 1);
+    }
+
+    applyFilterAndSearch();
+    showToast('🗑️ ลบคำถามเรียบร้อย');
+  }
+  window.deleteCard = deleteCard;
+
+  // Restore All Deleted Cards
+  function restoreAllCards() {
+    if (deletedIds.size === 0) {
+      showToast('ไม่มีคำถามที่ถูกลบ');
+      return;
+    }
+    if (confirm(`ต้องการกู้คืนคำถามที่เคยลบไปทั้งหมด (${deletedIds.size} ข้อ) ใช่หรือไม่?`)) {
+      deletedIds.clear();
+      try {
+        localStorage.removeItem('biozabb_deleted_card_ids');
+      } catch (e) {}
+      allCards = getCombinedCards();
+      updateBadgeCounts();
+      applyFilterAndSearch();
+      showToast('✅ กู้คืนคำถามทั้งหมดเรียบร้อย!');
+    }
+  }
+  window.restoreAllCards = restoreAllCards;
 
   // Filter and Search
   function applyFilterAndSearch() {
@@ -198,10 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
     frontNumEl.textContent = `#${card.id} (${currentIndex + 1}/${currentCards.length})`;
     backNumEl.textContent = `#${card.id} (${currentIndex + 1}/${currentCards.length})`;
 
-    // Category Badge
+    // Category Badge (Identical clean style for all cards)
     frontBadgeEl.className = 'badge-tag ' + card.category;
-    frontBadgeEl.innerHTML = (card.category === 'general' ? '🌿 ' : '🔬 ') + card.categoryName + 
-      (card.isCustom ? ' <span class="custom-badge" style="margin-left:0.4rem;">เพิ่มเอง</span>' : '');
+    frontBadgeEl.innerHTML = (card.category === 'general' ? '🌿 ' : '🔬 ') + card.categoryName;
 
     // Star State
     const isStarred = starredIds.has(card.id);
@@ -236,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.disabled = currentCards.length <= 1;
   }
 
-  // Create individual sleek horizontal list row (matching user sketch)
+  // Create individual sleek horizontal list row (identical style, delete button on all)
   function createListRowItem(card) {
     const isStarred = starredIds.has(card.id);
     const item = document.createElement('div');
@@ -247,12 +362,14 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="list-row-header">
         <div class="list-row-left">
           <span class="list-row-id">#${card.id}</span>
-          ${card.isCustom ? '<span class="custom-badge">เพิ่มเอง</span>' : ''}
           <span class="list-row-q">${escapeHtml(card.question)}</span>
         </div>
         <div class="list-row-right">
           <button class="btn-icon star-btn ${isStarred ? 'is-starred' : ''}" data-id="${card.id}" title="ติดดาว" style="width:28px; height:28px; font-size:0.85rem;">
             ★
+          </button>
+          <button class="btn-icon del-row-btn" data-id="${card.id}" title="ลบคำถามข้อนี้" style="width:28px; height:28px; font-size:0.8rem; color:#f87171;">
+            🗑️
           </button>
           <span class="list-chevron">▼</span>
         </div>
@@ -262,7 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="list-row-actions">
           <span>👆 คลิกที่แถบเพื่อพับเก็บ</span>
           <div style="display:flex; align-items:center; gap:0.5rem;">
-            ${card.isCustom ? `<button class="btn-small list-del-btn" data-id="${card.id}" style="color:#f87171; border-color:rgba(239,68,68,0.3); font-size:0.75rem;">🗑️ ลบ</button>` : ''}
+            <button class="btn-small list-del-btn" data-id="${card.id}" style="color:#f87171; border-color:rgba(239,68,68,0.3); font-size:0.75rem;">
+              🗑️ ลบข้อนี้
+            </button>
             <button class="btn-small list-tts-btn" data-id="${card.id}" style="font-size:0.78rem;">
               🔊 ฟังเสียงอ่าน
             </button>
@@ -271,10 +390,10 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Click header to expand/collapse (except clicking star)
+    // Click header to expand/collapse (except clicking star or delete)
     const header = item.querySelector('.list-row-header');
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.star-btn')) return;
+      if (e.target.closest('button')) return;
       item.classList.toggle('is-expanded');
     });
 
@@ -294,18 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
       speakText(card.answer, listTtsBtn);
     });
 
-    // Delete custom card in list item
-    if (card.isCustom) {
-      const delBtn = item.querySelector('.list-del-btn');
-      if (delBtn) {
-        delBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (confirm(`ต้องการลบคำถาม "${card.question}" ใช่หรือไม่?`)) {
-            deleteCustomCard(card.id);
-          }
-        });
-      }
-    }
+    // Delete buttons (both row header trash icon and expanded body delete button)
+    const delBtns = item.querySelectorAll('.del-row-btn, .list-del-btn');
+    delBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteCard(card.id);
+      });
+    });
 
     return item;
   }
@@ -328,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Two-Column Layout Strategy:
-    // If viewing all and not searching: Left = General (9), Right = Indepth (12)
+    // If viewing all and not searching: Left = General, Right = Indepth
     if (activeFilter === 'all' && !searchQuery.trim()) {
       const colLeft = document.createElement('div');
       colLeft.className = 'list-column';
@@ -502,6 +617,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Delete buttons in Flashcard
+  [frontDelBtn, backDelBtn].forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentCards.length > 0) {
+          deleteCard(currentCards[currentIndex].id);
+        }
+      });
+    }
+  });
+
   // Flashcard TTS button
   ttsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -578,45 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Add Question Modal & Custom Cards Logic ---
-  let toastTimer = null;
-  function showToast(msg) {
-    if (!toastMsg) return;
-    toastMsg.textContent = msg;
-    toastMsg.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toastMsg.classList.remove('show');
-    }, 2800);
-  }
-
-  function openAddModal() {
-    if (!addCardModal) return;
-    addCardForm.reset();
-    addCardModal.style.display = 'flex';
-    setTimeout(() => {
-      if (inputQuestion) inputQuestion.focus();
-    }, 50);
-  }
-
-  function closeAddModal() {
-    if (!addCardModal) return;
-    addCardModal.style.display = 'none';
-  }
-
-  function deleteCustomCard(id) {
-    userCards = userCards.filter(c => c.id !== id);
-    try {
-      localStorage.setItem('biozabb_user_cards', JSON.stringify(userCards));
-    } catch (e) {}
-    starredIds.delete(id);
-    saveStarred();
-    allCards = [...FLASHCARDS_DATA, ...userCards];
-    updateBadgeCounts();
-    applyFilterAndSearch();
-    showToast('🗑️ ลบคำถามเรียบร้อย');
-  }
-
+  // --- Add Question Modal Event Listeners ---
   if (addCardBtn) {
     addCardBtn.addEventListener('click', openAddModal);
   }
@@ -640,14 +729,19 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const catInput = addCardForm.querySelector('input[name="card-category"]:checked');
       const categoryVal = catInput ? catInput.value : 'general';
-      const qVal = inputQuestion.value.trim();
-      const aVal = inputAnswer.value.trim();
-      const kwsRaw = inputKeywords.value.trim();
+      const qVal = inputQuestion ? inputQuestion.value.trim() : '';
+      const aVal = inputAnswer ? inputAnswer.value.trim() : '';
+      const kwsRaw = inputKeywords ? inputKeywords.value.trim() : '';
 
-      if (!qVal || !aVal) return;
+      if (!qVal || !aVal) {
+        alert('กรุณากรอกคำถามและคำตอบให้ครบถ้วน');
+        return;
+      }
 
       const kws = kwsRaw ? kwsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-      const nextId = allCards.length > 0 ? Math.max(...allCards.map(c => c.id)) + 1 : 1;
+      const allKnownIds = [...FLASHCARDS_DATA.map(c => c.id), ...userCards.map(c => c.id)];
+      const maxId = allKnownIds.length > 0 ? Math.max(...allKnownIds) : 0;
+      const nextId = maxId + 1;
 
       const newCard = {
         id: nextId,
@@ -655,8 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryName: categoryVal === 'general' ? 'คำถามทั่วไป' : 'คำถามเจาะลึก',
         question: qVal,
         answer: aVal,
-        keywords: kws,
-        isCustom: true
+        keywords: kws
       };
 
       userCards.push(newCard);
@@ -664,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('biozabb_user_cards', JSON.stringify(userCards));
       } catch (err) {}
 
-      allCards = [...FLASHCARDS_DATA, ...userCards];
+      allCards = getCombinedCards();
       closeAddModal();
       showToast('✅ เพิ่มคำถามสำเร็จ!');
 
@@ -699,14 +792,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard Shortcuts
   window.addEventListener('keydown', (e) => {
-    // If modal is open, let Escape close it
-    if (addCardModal && addCardModal.style.display === 'flex') {
+    // If modal is open, Escape closes it
+    const modalEl = document.getElementById('add-card-modal');
+    if (modalEl && modalEl.style.display === 'flex') {
       if (e.code === 'Escape') {
         e.preventDefault();
         closeAddModal();
       }
       return;
     }
+
     if (document.activeElement === searchInput) return;
 
     if (e.code === 'Space') {

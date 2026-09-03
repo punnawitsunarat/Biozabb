@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -66,7 +66,7 @@
       <!-- Secondary Controls (Add Card, Shuffle, Reset, TTS speed) -->
       <div class="secondary-actions">
         <div class="action-buttons-group">
-          <button id="add-card-btn" class="btn-small" style="background: rgba(16, 185, 129, 0.25); border-color: var(--color-brand); color: #86efac; font-weight: 600;" title="เพิ่มคำถามและคำตอบใหม่">
+          <button id="add-card-btn" class="btn-small" onclick="openAddModal()" style="background: rgba(16, 185, 129, 0.25); border-color: var(--color-brand); color: #86efac; font-weight: 600; cursor: pointer;" title="เพิ่มคำถามและคำตอบใหม่">
             ➕ เพิ่มคำถามใหม่
           </button>
           <button id="shuffle-btn" class="btn-small" title="สุ่มลำดับคำถาม (S)">
@@ -74,6 +74,9 @@
           </button>
           <button id="reset-btn" class="btn-small" title="เรียงตามลำดับเดิม">
             🔄 เรียงตามเดิม
+          </button>
+          <button id="restore-btn" class="btn-small" onclick="restoreAllCards()" title="กู้คืนคำถามที่เคยลบ" style="display: none; color: #f87171; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.1);">
+            🔄 กู้คืนคำถาม (<span id="deleted-count">0</span>)
           </button>
         </div>
 
@@ -109,7 +112,8 @@
               <div class="card-top-bar">
                 <span id="front-badge" class="badge-tag general">🌿 คำถามทั่วไป</span>
                 <div class="card-actions-right">
-                  <span id="front-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/20)</span>
+                  <span id="front-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/22)</span>
+                  <button id="front-del-btn" class="btn-icon" title="ลบคำถามนี้" style="color: #f87171; width: 32px; height: 32px;">🗑️</button>
                   <button id="front-star-btn" class="btn-icon star-btn" title="ติดดาวเพื่อทบทวน (B)">★</button>
                 </div>
               </div>
@@ -133,7 +137,8 @@
                   <button id="tts-btn" class="btn-icon tts-btn" title="ฟังเสียงอ่านภาษาอังกฤษ (P)">
                     🔊 ฟังเสียงอ่าน
                   </button>
-                  <span id="back-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/20)</span>
+                  <span id="back-card-number" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">#1 (1/22)</span>
+                  <button id="back-del-btn" class="btn-icon" title="ลบคำถามนี้" style="color: #f87171; width: 32px; height: 32px;">🗑️</button>
                   <button id="back-star-btn" class="btn-icon star-btn" title="ติดดาวเพื่อทบทวน (B)">★</button>
                 </div>
               </div>
@@ -204,14 +209,14 @@
   </div>
 
   <!-- Add Question Modal Dialog -->
-  <div id="add-card-modal" class="modal-overlay" style="display: none;">
+  <div id="add-card-modal" class="modal-overlay" onclick="if(event.target === this) closeAddModal()" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title-group">
           <h3 class="modal-title">➕ เพิ่มคำถามใหม่</h3>
           <p class="modal-subtitle">บันทึกลงในระบบเพื่อใช้ฝึกซ้อมทันที</p>
         </div>
-        <button type="button" id="modal-close-btn" class="modal-close-btn" title="ปิดหน้าต่าง">✕</button>
+        <button type="button" id="modal-close-btn" class="modal-close-btn" onclick="closeAddModal()" title="ปิดหน้าต่าง">✕</button>
       </div>
 
       <form id="add-card-form" class="modal-form">
@@ -246,7 +251,7 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" id="modal-cancel-btn" class="btn-small" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">ยกเลิก</button>
+          <button type="button" id="modal-cancel-btn" class="btn-small" onclick="closeAddModal()" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">ยกเลิก</button>
           <button type="submit" class="btn-nav btn-flip-main" style="max-width: 180px; padding: 0.6rem 1.2rem; font-size: 0.9rem;">💾 บันทึกคำถาม</button>
         </div>
       </form>
@@ -257,7 +262,7 @@
   <div id="toast-msg" class="toast-notification"></div>
 
   <!-- Scripts -->
-  <script src="cards-data.js"></script>
-  <script src="app.js"></script>
+  <script src="cards-data.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
