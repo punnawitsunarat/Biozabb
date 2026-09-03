@@ -123,6 +123,21 @@ const FLASHCARDS_DATA = [
   },
   {
     "id": 10,
+    "category": "general",
+    "categoryName": "คำถามทั่วไป",
+    "question": "ราคาเท่าไหร่ ต้นทุนเท่าไหร่ และคุ้มไหม",
+    "answer": "We sell it at 69 Baht per pack, and our production cost around 25 to 30 Baht. we use surplus vegetables, our raw material cost is extremely low. This gives us a strong profit margin of over 50%, making BioZabb both eco viable and sustainable.",
+    "keywords": [
+      "69 Baht per pack",
+      "production cost around 25 to 30 Baht",
+      "surplus vegetables",
+      "raw material cost is extremely low",
+      "profit margin of over 50%",
+      "eco viable and sustainable"
+    ]
+  },
+  {
+    "id": 11,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "ทั้งหมดใช้เวลาทำกี่วัน",
@@ -135,7 +150,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 11,
+    "id": 12,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "อบที่อุณหภูมิ 60°C นาน 24 ชั่วโมง เชื้อโพรไบโอติกยังมีชีวิตอยู่จริงไหม?",
@@ -147,7 +162,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 12,
+    "id": 13,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "เลือกผักอะไร ทำไมถึงเลือกผัก 4 ชนิดนี้??",
@@ -159,7 +174,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 13,
+    "id": 14,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "ควบคุมคุณภาพผักในแต่ละวันให้คงที่อย่างไร?",
@@ -170,7 +185,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 14,
+    "id": 15,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "สูตร สัดส่วนเป็นยังไง??",
@@ -181,7 +196,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 15,
+    "id": 16,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "แต่ละสูตรต่างกันไง ??",
@@ -194,7 +209,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 16,
+    "id": 17,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "ทำไมสูตร A ถึงดีกว่าสูตร B ในการทดสอบทางประสาทสัมผัส?",
@@ -206,7 +221,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 17,
+    "id": 18,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "pH ที่ aw ที่ต่ำ รักษาความปลอดภัยของผลิตภัณฑ์ได้อย่างไร?",
@@ -219,7 +234,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 18,
+    "id": 19,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "ค่า PH ควรอยู่ที่เท่าไหร่",
@@ -231,7 +246,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 19,
+    "id": 20,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "เคลมว่า ปราศจาก Msg ได้จริงไหม?",
@@ -244,7 +259,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 20,
+    "id": 21,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "การเก็บรักษา?????????",
@@ -256,7 +271,7 @@ const FLASHCARDS_DATA = [
     ]
   },
   {
-    "id": 21,
+    "id": 22,
     "category": "indepth",
     "categoryName": "คำถามเจาะลึก",
     "question": "กินแค่เครื่องปรุงก็ได้!!!!!!!",

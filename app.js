@@ -1,7 +1,16 @@
 // BioZabb Flashcards Application Logic
 document.addEventListener('DOMContentLoaded', () => {
+  // LocalStorage for Custom User Cards
+  let userCards = [];
+  try {
+    const savedCards = localStorage.getItem('biozabb_user_cards');
+    if (savedCards) userCards = JSON.parse(savedCards);
+  } catch (e) {
+    console.warn('LocalStorage not accessible for user cards', e);
+  }
+
   // State
-  let allCards = [...FLASHCARDS_DATA];
+  let allCards = [...FLASHCARDS_DATA, ...userCards];
   let currentCards = [...allCards];
   let currentIndex = 0;
   let isFlipped = false;
@@ -56,8 +65,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const listColumnsWrapper = document.getElementById('list-columns-wrapper');
   const listCountInfo = document.getElementById('list-count-info');
   const expandAllBtn = document.getElementById('expand-all-btn');
-  const collapseAllBtn = document.getElementById('collapse-all-btn');
   const emptyState = document.getElementById('empty-state');
+
+  // Add Question Modal Elements
+  const addCardBtn = document.getElementById('add-card-btn');
+  const addCardModal = document.getElementById('add-card-modal');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  const addCardForm = document.getElementById('add-card-form');
+  const inputQuestion = document.getElementById('input-question');
+  const inputAnswer = document.getElementById('input-answer');
+  const inputKeywords = document.getElementById('input-keywords');
+  const toastMsg = document.getElementById('toast-msg');
 
   // Mode Switch Tabs
   const modeFlashcardBtn = document.getElementById('mode-flashcard-btn');
@@ -181,7 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Category Badge
     frontBadgeEl.className = 'badge-tag ' + card.category;
-    frontBadgeEl.innerHTML = (card.category === 'general' ? '🌿 ' : '🔬 ') + card.categoryName;
+    frontBadgeEl.innerHTML = (card.category === 'general' ? '🌿 ' : '🔬 ') + card.categoryName + 
+      (card.isCustom ? ' <span class="custom-badge" style="margin-left:0.4rem;">เพิ่มเอง</span>' : '');
 
     // Star State
     const isStarred = starredIds.has(card.id);
@@ -227,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="list-row-header">
         <div class="list-row-left">
           <span class="list-row-id">#${card.id}</span>
+          ${card.isCustom ? '<span class="custom-badge">เพิ่มเอง</span>' : ''}
           <span class="list-row-q">${escapeHtml(card.question)}</span>
         </div>
         <div class="list-row-right">
@@ -240,9 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="list-row-ans">${formatAnswerWithHighlights(card.answer, card.keywords)}</div>
         <div class="list-row-actions">
           <span>👆 คลิกที่แถบเพื่อพับเก็บ</span>
-          <button class="btn-small list-tts-btn" data-id="${card.id}" style="font-size:0.78rem;">
-            🔊 ฟังเสียงอ่าน
-          </button>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            ${card.isCustom ? `<button class="btn-small list-del-btn" data-id="${card.id}" style="color:#f87171; border-color:rgba(239,68,68,0.3); font-size:0.75rem;">🗑️ ลบ</button>` : ''}
+            <button class="btn-small list-tts-btn" data-id="${card.id}" style="font-size:0.78rem;">
+              🔊 ฟังเสียงอ่าน
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -269,6 +293,19 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       speakText(card.answer, listTtsBtn);
     });
+
+    // Delete custom card in list item
+    if (card.isCustom) {
+      const delBtn = item.querySelector('.list-del-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`ต้องการลบคำถาม "${card.question}" ใช่หรือไม่?`)) {
+            deleteCustomCard(card.id);
+          }
+        });
+      }
+    }
 
     return item;
   }
@@ -541,8 +578,135 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Add Question Modal & Custom Cards Logic ---
+  let toastTimer = null;
+  function showToast(msg) {
+    if (!toastMsg) return;
+    toastMsg.textContent = msg;
+    toastMsg.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastMsg.classList.remove('show');
+    }, 2800);
+  }
+
+  function openAddModal() {
+    if (!addCardModal) return;
+    addCardForm.reset();
+    addCardModal.style.display = 'flex';
+    setTimeout(() => {
+      if (inputQuestion) inputQuestion.focus();
+    }, 50);
+  }
+
+  function closeAddModal() {
+    if (!addCardModal) return;
+    addCardModal.style.display = 'none';
+  }
+
+  function deleteCustomCard(id) {
+    userCards = userCards.filter(c => c.id !== id);
+    try {
+      localStorage.setItem('biozabb_user_cards', JSON.stringify(userCards));
+    } catch (e) {}
+    starredIds.delete(id);
+    saveStarred();
+    allCards = [...FLASHCARDS_DATA, ...userCards];
+    updateBadgeCounts();
+    applyFilterAndSearch();
+    showToast('🗑️ ลบคำถามเรียบร้อย');
+  }
+
+  if (addCardBtn) {
+    addCardBtn.addEventListener('click', openAddModal);
+  }
+
+  if (modalCloseBtn) {
+    modalCloseBtn.addEventListener('click', closeAddModal);
+  }
+
+  if (modalCancelBtn) {
+    modalCancelBtn.addEventListener('click', closeAddModal);
+  }
+
+  if (addCardModal) {
+    addCardModal.addEventListener('click', (e) => {
+      if (e.target === addCardModal) closeAddModal();
+    });
+  }
+
+  if (addCardForm) {
+    addCardForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const catInput = addCardForm.querySelector('input[name="card-category"]:checked');
+      const categoryVal = catInput ? catInput.value : 'general';
+      const qVal = inputQuestion.value.trim();
+      const aVal = inputAnswer.value.trim();
+      const kwsRaw = inputKeywords.value.trim();
+
+      if (!qVal || !aVal) return;
+
+      const kws = kwsRaw ? kwsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const nextId = allCards.length > 0 ? Math.max(...allCards.map(c => c.id)) + 1 : 1;
+
+      const newCard = {
+        id: nextId,
+        category: categoryVal,
+        categoryName: categoryVal === 'general' ? 'คำถามทั่วไป' : 'คำถามเจาะลึก',
+        question: qVal,
+        answer: aVal,
+        keywords: kws,
+        isCustom: true
+      };
+
+      userCards.push(newCard);
+      try {
+        localStorage.setItem('biozabb_user_cards', JSON.stringify(userCards));
+      } catch (err) {}
+
+      allCards = [...FLASHCARDS_DATA, ...userCards];
+      closeAddModal();
+      showToast('✅ เพิ่มคำถามสำเร็จ!');
+
+      updateBadgeCounts();
+
+      // If viewing another category, switch to the added card's category or all
+      if (activeFilter !== 'all' && activeFilter !== categoryVal) {
+        activeFilter = 'all';
+        filterBtns.forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+      }
+
+      applyFilterAndSearch();
+
+      // Navigate directly to the new card
+      if (viewMode === 'flashcard') {
+        const newIdx = currentCards.findIndex(c => c.id === nextId);
+        if (newIdx !== -1) {
+          currentIndex = newIdx;
+          renderFlashcard();
+        }
+      } else {
+        setTimeout(() => {
+          const itemEl = document.querySelector(`.list-row-item[data-id="${nextId}"]`);
+          if (itemEl) {
+            itemEl.classList.add('is-expanded');
+            itemEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 120);
+      }
+    });
+  }
+
   // Keyboard Shortcuts
   window.addEventListener('keydown', (e) => {
+    // If modal is open, let Escape close it
+    if (addCardModal && addCardModal.style.display === 'flex') {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        closeAddModal();
+      }
+      return;
+    }
     if (document.activeElement === searchInput) return;
 
     if (e.code === 'Space') {

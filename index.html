@@ -43,10 +43,10 @@
         <!-- Category Filters -->
         <div class="category-filters">
           <button class="filter-btn active" data-filter="all">
-            🌟 ทั้งหมด <span class="count-badge" id="total-count-badge">21</span>
+            🌟 ทั้งหมด <span class="count-badge" id="total-count-badge">22</span>
           </button>
           <button class="filter-btn" data-filter="general">
-            🌿 คำถามทั่วไป <span class="count-badge" id="general-count-badge">9</span>
+            🌿 คำถามทั่วไป <span class="count-badge" id="general-count-badge">10</span>
           </button>
           <button class="filter-btn" data-filter="indepth">
             🔬 คำถามเจาะลึก <span class="count-badge" id="indepth-count-badge">12</span>
@@ -63,9 +63,12 @@
         </div>
       </div>
 
-      <!-- Secondary Controls (Shuffle, TTS speed) -->
+      <!-- Secondary Controls (Add Card, Shuffle, Reset, TTS speed) -->
       <div class="secondary-actions">
         <div class="action-buttons-group">
+          <button id="add-card-btn" class="btn-small" style="background: rgba(16, 185, 129, 0.25); border-color: var(--color-brand); color: #86efac; font-weight: 600;" title="เพิ่มคำถามและคำตอบใหม่">
+            ➕ เพิ่มคำถามใหม่
+          </button>
           <button id="shuffle-btn" class="btn-small" title="สุ่มลำดับคำถาม (S)">
             🔀 สุ่มคำถาม
           </button>
@@ -199,6 +202,59 @@
       <span><kbd>P</kbd> ฟังเสียงอ่าน</span>
     </footer>
   </div>
+
+  <!-- Add Question Modal Dialog -->
+  <div id="add-card-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 class="modal-title">➕ เพิ่มคำถามใหม่</h3>
+          <p class="modal-subtitle">บันทึกลงในระบบเพื่อใช้ฝึกซ้อมทันที</p>
+        </div>
+        <button type="button" id="modal-close-btn" class="modal-close-btn" title="ปิดหน้าต่าง">✕</button>
+      </div>
+
+      <form id="add-card-form" class="modal-form">
+        <div class="form-group">
+          <label class="form-label">หมวดหมู่คำถาม <span class="required">*</span></label>
+          <div class="category-radio-group">
+            <label class="category-radio-label">
+              <input type="radio" name="card-category" value="general" checked>
+              <span class="radio-custom general">🌿 คำถามทั่วไป</span>
+            </label>
+            <label class="category-radio-label">
+              <input type="radio" name="card-category" value="indepth">
+              <span class="radio-custom indepth">🔬 คำถามเจาะลึก</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-question" class="form-label">คำถาม (ภาษาไทย) <span class="required">*</span></label>
+          <input type="text" id="input-question" class="form-input" placeholder="เช่น ทำไมถึงเลือกใช้บรรจุภัณฑ์แบบซองฟอยล์?" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="input-answer" class="form-label">คำตอบ (ภาษาอังกฤษ) <span class="required">*</span></label>
+          <textarea id="input-answer" class="form-textarea" rows="4" placeholder="เช่น We chose aluminum foil pouches because it blocks moisture and light..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="input-keywords" class="form-label">คำสำคัญ / ไฮไลต์ (คั่นด้วยเครื่องหมายจุลภาค ,)</label>
+          <input type="text" id="input-keywords" class="form-input" placeholder="เช่น aluminum foil, blocks moisture, light protection" autocomplete="off">
+          <span class="form-hint">💡 คำสำคัญเหล่านี้จะถูกทำตัวหนาสีเขียวในคำตอบเพื่อให้อ่านจำง่ายขึ้น</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel-btn" class="btn-small" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">ยกเลิก</button>
+          <button type="submit" class="btn-nav btn-flip-main" style="max-width: 180px; padding: 0.6rem 1.2rem; font-size: 0.9rem;">💾 บันทึกคำถาม</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-msg" class="toast-notification"></div>
 
   <!-- Scripts -->
   <script src="cards-data.js"></script>
